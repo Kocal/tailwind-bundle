@@ -34,17 +34,41 @@ class TailwindBuilderTest extends TestCase
         }
     }
 
-    public function testIntegration(): void
+    public function testIntegrationWithDefaultOptions(): void
     {
         $builder = new TailwindBuilder(
             __DIR__.'/fixtures',
             __DIR__.'/fixtures/assets/styles/app.css',
             __DIR__.'/fixtures/var/tailwind'
         );
-        $process = $builder->runBuild(false);
+        $process = $builder->runBuild(watch: false, minify: false);
         $process->wait();
 
         $this->assertTrue($process->isSuccessful());
         $this->assertFileExists(__DIR__.'/fixtures/var/tailwind/tailwind.built.css');
+
+        $outputFileContents = file_get_contents(__DIR__.'/fixtures/var/tailwind/tailwind.built.css');
+        // Output should not be minified
+        $this->assertStringContainsString("body {\n  background-color: red;\n}", $outputFileContents);
+        $this->assertStringNotContainsString('body{background-color:red}', $outputFileContents);
+    }
+
+    public function testIntegrationWithMinify(): void
+    {
+        $builder = new TailwindBuilder(
+            __DIR__.'/fixtures',
+            __DIR__.'/fixtures/assets/styles/app.css',
+            __DIR__.'/fixtures/var/tailwind'
+        );
+        $process = $builder->runBuild(watch: false, minify: true);
+        $process->wait();
+
+        $this->assertTrue($process->isSuccessful());
+        $this->assertFileExists(__DIR__.'/fixtures/var/tailwind/tailwind.built.css');
+
+        // Output should be minified
+        $outputFileContents = file_get_contents(__DIR__.'/fixtures/var/tailwind/tailwind.built.css');
+        $this->assertStringNotContainsString("body {\n  background-color: red;\n}", $outputFileContents);
+        $this->assertStringContainsString('body{background-color:red}', $outputFileContents);
     }
 }
